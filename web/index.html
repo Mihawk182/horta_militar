@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Horta Militar IoT</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  </head>
+  <body>
+    <main class="app">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Colegio Militar</p>
+          <h1>Horta Militar IoT</h1>
+          <p class="subtitle">Monitoramento de sensores e controle de irrigacao com ESP32 e MQTT.</p>
+        </div>
+        <div class="connection" id="connectionStatus">desconectado</div>
+      </section>
+
+      <section class="grid">
+        <article class="metric">
+          <span>Umidade do solo</span>
+          <strong id="soilMoisture">--%</strong>
+        </article>
+        <article class="metric">
+          <span>Temperatura</span>
+          <strong id="temperature">-- C</strong>
+        </article>
+        <article class="metric">
+          <span>Umidade do ar</span>
+          <strong id="airHumidity">--%</strong>
+        </article>
+        <article class="metric">
+          <span>Bomba</span>
+          <strong id="pumpStatus">--</strong>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Controle</h2>
+        <div class="actions">
+          <button id="turnPumpOn" type="button">Ligar bomba</button>
+          <button id="turnPumpOff" type="button">Desligar bomba</button>
+          <button id="setAutoMode" type="button">Modo automatico</button>
+          <button id="setManualMode" type="button">Modo manual</button>
+        </div>
+
+        <label class="limit">
+          Limite de umidade para irrigacao automatica
+          <input id="moistureLimit" type="number" min="0" max="100" value="35" />
+        </label>
+        <button id="saveLimit" type="button">Salvar limite</button>
+      </section>
+
+      <section class="panel">
+        <h2>Eventos</h2>
+        <ol id="events" class="events"></ol>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
