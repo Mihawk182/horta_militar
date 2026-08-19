@@ -3,61 +3,193 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Horta Militar IoT</title>
+    <title>Horta Inteligente do Colegio Militar Bombeiro</title>
     <link rel="stylesheet" href="style.css" />
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   </head>
   <body>
-    <main class="app">
-      <section class="hero">
-        <div>
-          <p class="eyebrow">Colegio Militar</p>
-          <h1>Horta Militar IoT</h1>
-          <p class="subtitle">Monitoramento de sensores e controle de irrigacao com ESP32 e MQTT.</p>
+    <div class="shell">
+      <aside class="sidebar" aria-label="Menu principal">
+        <button class="menu-toggle" type="button" aria-label="Abrir menu">=</button>
+        <nav class="nav-list">
+          <a class="nav-item active" href="#painel">Painel Principal</a>
+          <a class="nav-item" href="#canteiros">Canteiros</a>
+          <a class="nav-item" href="#sensores">Sensores</a>
+          <a class="nav-item" href="#irrigacao">Irrigacao</a>
+          <a class="nav-item" href="#historico">Historico</a>
+          <a class="nav-item" href="#eventos">Eventos</a>
+          <a class="nav-item" href="#configuracoes">Configuracoes</a>
+        </nav>
+        <div class="mission">
+          <span class="mission-leaf" aria-hidden="true"></span>
+          <strong>Nossa missao</strong>
+          <span>Salvar vidas</span>
+          <span>Proteger o futuro</span>
         </div>
-        <div class="connection" id="connectionStatus">desconectado</div>
-      </section>
+      </aside>
 
-      <section class="grid">
-        <article class="metric">
-          <span>Umidade do solo</span>
-          <strong id="soilMoisture">--%</strong>
-        </article>
-        <article class="metric">
-          <span>Temperatura</span>
-          <strong id="temperature">-- C</strong>
-        </article>
-        <article class="metric">
-          <span>Umidade do ar</span>
-          <strong id="airHumidity">--%</strong>
-        </article>
-        <article class="metric">
-          <span>Bomba</span>
-          <strong id="pumpStatus">--</strong>
-        </article>
-      </section>
+      <main class="dashboard" id="painel">
+        <header class="topbar">
+          <div class="brand">
+            <div class="crest" aria-hidden="true">CMB</div>
+            <div>
+              <p class="eyebrow">Sistema de Controle da Horta</p>
+              <h1>Horta Inteligente do Colegio Militar Bombeiro</h1>
+            </div>
+          </div>
+          <div class="header-meta">
+            <span id="currentDate">--/--/----</span>
+            <span id="currentTime">--:--:--</span>
+            <div class="profile">
+              <span class="avatar" aria-hidden="true">CO</span>
+              <span>
+                <strong>Cadete Oliveira</strong>
+                <small>Administrador</small>
+              </span>
+            </div>
+          </div>
+        </header>
 
-      <section class="panel">
-        <h2>Controle</h2>
-        <div class="actions">
-          <button id="turnPumpOn" type="button">Ligar bomba</button>
-          <button id="turnPumpOff" type="button">Desligar bomba</button>
-          <button id="setAutoMode" type="button">Modo automatico</button>
-          <button id="setManualMode" type="button">Modo manual</button>
-        </div>
+        <section class="overview-grid">
+          <article class="card status-card">
+            <p class="section-title">Status do Sistema</p>
+            <div class="status-content">
+              <div class="status-mark" aria-hidden="true"></div>
+              <div>
+                <h2>Sistema Operacional</h2>
+                <p>Todos os sistemas funcionando normalmente.</p>
+              </div>
+              <div class="controller">
+                <span class="chip-board" aria-hidden="true"></span>
+                <span>Conectado ao Controlador</span>
+                <strong>ESP32 via Wi-Fi</strong>
+                <span class="connection disconnected" id="connectionStatus">modo demo</span>
+              </div>
+            </div>
+          </article>
 
-        <label class="limit">
-          Limite de umidade para irrigacao automatica
-          <input id="moistureLimit" type="number" min="0" max="100" value="35" />
-        </label>
-        <button id="saveLimit" type="button">Salvar limite</button>
-      </section>
+          <article class="card components-card" id="sensores">
+            <p class="section-title">Componentes do Sistema</p>
+            <div class="component-flow" aria-label="Fluxo dos componentes">
+              <div class="component"><span class="component-icon board"></span><strong>ESP32</strong><small>Controlador</small></div>
+              <div class="component"><span class="component-icon probe"></span><strong>Solo</strong><small>3 sensores</small></div>
+              <div class="component"><span class="component-icon dht"></span><strong>DHT11</strong><small>Temp. e umidade</small></div>
+              <div class="component"><span class="component-icon sun"></span><strong>Luz</strong><small>Luminosidade</small></div>
+              <div class="component"><span class="component-icon rain"></span><strong>Chuva</strong><small>Deteccao</small></div>
+              <div class="component"><span class="component-icon relay"></span><strong>Rele</strong><small>Bomba</small></div>
+            </div>
+          </article>
+        </section>
 
-      <section class="panel">
-        <h2>Eventos</h2>
-        <ol id="events" class="events"></ol>
-      </section>
-    </main>
+        <section class="main-grid">
+          <div class="left-column">
+            <section class="card" id="canteiros">
+              <p class="section-title">Canteiros da Horta</p>
+              <div class="beds-grid">
+                <article class="bed-card">
+                  <span class="bed-label">Canteiro 1</span>
+                  <div class="gauge" style="--value: 62" aria-label="Umidade do canteiro 1">
+                    <span id="soil1">62%</span>
+                  </div>
+                  <strong id="soil1Status">Umido</strong>
+                  <small>Ultima irrigacao: 08:15</small>
+                </article>
+
+                <article class="bed-card">
+                  <span class="bed-label">Canteiro 2</span>
+                  <div class="gauge" style="--value: 41" aria-label="Umidade do canteiro 2">
+                    <span id="soil2">41%</span>
+                  </div>
+                  <strong id="soil2Status">Moderado</strong>
+                  <small>Ultima irrigacao: 07:45</small>
+                </article>
+
+                <article class="bed-card">
+                  <span class="bed-label">Canteiro 3</span>
+                  <div class="gauge" style="--value: 78" aria-label="Umidade do canteiro 3">
+                    <span id="soil3">78%</span>
+                  </div>
+                  <strong id="soil3Status">Umido</strong>
+                  <small>Ultima irrigacao: 08:05</small>
+                </article>
+              </div>
+            </section>
+
+            <section class="lower-grid">
+              <article class="card scheme-card">
+                <p class="section-title">Esquema da Horta e Sensores</p>
+                <div class="garden-diagram" aria-label="Esquema da montagem da horta">
+                  <div class="plot"><span>Solo 1</span></div>
+                  <div class="plot"><span>DHT11</span></div>
+                  <div class="plot"><span>Chuva</span></div>
+                  <div class="wiring"></div>
+                  <div class="devices">
+                    <span class="device esp">ESP32</span>
+                    <span class="device relay-box">Rele 5V</span>
+                    <span class="device pump">Bomba</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="card chart-card" id="historico">
+                <p class="section-title">Historico de Leituras</p>
+                <div class="legend">
+                  <span><i class="red"></i> Solo medio</span>
+                  <span><i class="gold"></i> Temperatura</span>
+                  <span><i class="blue"></i> Umidade do ar</span>
+                </div>
+                <canvas id="historyChart" width="720" height="300" aria-label="Grafico das ultimas leituras"></canvas>
+              </article>
+            </section>
+          </div>
+
+          <aside class="right-column">
+            <section class="card readings-card">
+              <p class="section-title">Leituras em Tempo Real</p>
+              <div class="reading-grid">
+                <article class="reading"><span>Solo medio</span><strong id="soilAverage">60%</strong><small id="soilAverageStatus">Normal</small></article>
+                <article class="reading"><span>Temperatura</span><strong id="temperature">27.6 C</strong><small>Normal</small></article>
+                <article class="reading"><span>Umidade do ar</span><strong id="airHumidity">65%</strong><small>Normal</small></article>
+                <article class="reading"><span>Luminosidade</span><strong id="lightLevel">72%</strong><small>Boa</small></article>
+                <article class="reading"><span>Chuva</span><strong id="rainStatus">Sem chuva</strong><small>Normal</small></article>
+                <article class="reading"><span>Bomba</span><strong id="pumpStatus">Desligada</strong><small>Normal</small></article>
+              </div>
+            </section>
+
+            <section class="card control-card" id="irrigacao">
+              <p class="section-title">Controle de Irrigacao</p>
+              <div class="mode-row">
+                <span>Modo atual</span>
+                <strong id="modeStatus">Automatico</strong>
+              </div>
+              <div class="actions">
+                <button id="turnPumpOn" type="button">Ligar irrigacao</button>
+                <button id="turnPumpOff" class="secondary" type="button">Desligar irrigacao</button>
+                <button id="setAutoMode" class="compact" type="button">Automatico</button>
+                <button id="setManualMode" class="compact secondary" type="button">Manual</button>
+              </div>
+              <label class="limit" id="configuracoes">
+                Limite de umidade automatica
+                <input id="moistureLimit" type="number" min="0" max="100" value="35" />
+              </label>
+              <button id="saveLimit" class="save" type="button">Salvar limite</button>
+              <p class="notice">No modo automatico, a irrigacao considera a media dos tres sensores de solo e a regra configurada.</p>
+            </section>
+
+            <section class="card events-card" id="eventos">
+              <p class="section-title">Eventos</p>
+              <ol id="events" class="events"></ol>
+            </section>
+          </aside>
+        </section>
+
+        <footer class="footer">
+          <span>Sistema desenvolvido para fins educacionais.</span>
+          <strong>Disciplina, Coragem e Humanidade</strong>
+          <span>Versao 1.1.0</span>
+        </footer>
+      </main>
+    </div>
 
     <script src="app.js"></script>
   </body>
