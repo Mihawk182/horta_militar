@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import mqtt, { MqttClient } from "mqtt";
 import type { BrokerState, Readings } from "./types";
+import schoolCrest from "./assets/brasao-dom-pedro-ii.png";
 
 const BROKER_URL = "wss://e724464d.ala.us-east-1.emqxsl.com:8084/mqtt";
 const BASE_TOPIC = "horta-militar/001";
@@ -76,7 +77,7 @@ export default function App() {
   ];
 
   return <main className="app-shell">
-    <header className="topbar"><div className="brand"><div className="brand-mark">CBM</div><div><p>Colégio Militar do Corpo de Bombeiros</p><h1>Horta Inteligente</h1></div></div><div className={`connection connection--${readings.espOnline ? "online" : brokerState}`}><span className="status-dot" />{connectionLabel}</div></header>
+    <header className="topbar"><div className="brand"><img className="school-crest" src={schoolCrest} alt="Brasão da Escola Estadual Militar Dom Pedro II" /><div><p>Escola Estadual Militar Dom Pedro II</p><h1>Tenente Coronel Evandro Dias de Souza</h1></div></div><div className={`connection connection--${readings.espOnline ? "online" : brokerState}`}><span className="status-dot" />{connectionLabel}</div></header>
     <section className="hero"><div><p className="eyebrow">Monitoramento em tempo real</p><h2>Leituras da horta</h2><p className="hero-copy">Painel de acompanhamento dos sensores conectados ao ESP32.</p></div><button className="settings-button" onClick={() => setShowSettings((visible) => !visible)}>{showSettings ? "Fechar configuração" : "Conectar painel"}</button></section>
     {showSettings && <form className="settings" onSubmit={saveCredentials}><div><strong>Conexão MQTT</strong><span>As credenciais são salvas somente neste navegador.</span></div><label>Usuário<input value={draft.username} onChange={(event) => setDraft({ ...draft, username: event.target.value })} required /></label><label>Senha<input type="password" value={draft.password} onChange={(event) => setDraft({ ...draft, password: event.target.value })} required /></label><button type="submit">Salvar e conectar</button></form>}
     <section className="primary-grid"><article className="primary-card soil-summary"><div className="card-heading"><span>Umidade média do solo</span><span className="chip">3 canteiros</span></div><strong>{percentage(averageSoil)}</strong><p>{metricStatus(averageSoil)}</p><div className="progress"><span style={{ width: `${averageSoil ?? 0}%` }} /></div></article><article className="primary-card climate-summary"><div className="card-heading"><span>Condições ambientais</span><span className="chip">DHT11</span></div><div className="climate-values"><div><small>Temperatura</small><strong>{readings.temperature === null ? "--" : `${readings.temperature.toFixed(1)}°C`}</strong></div><div><small>Umidade do ar</small><strong>{percentage(readings.airHumidity)}</strong></div></div></article></section>
