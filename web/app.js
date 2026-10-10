@@ -1,15 +1,17 @@
 const MQTT_CONFIG = {
-  // HiveMQ Cloud usa normalmente: wss://SEU_CLUSTER.s1.eu.hivemq.cloud:8884/mqtt
-  url: "wss://SEU_BROKER_WEBSOCKET/mqtt",
-  username: "SEU_USUARIO",
-  password: "SUA_SENHA",
+  // EMQX Serverless: MQTT sobre WebSocket seguro na porta 8084.
+  url: "wss://e724464d.ala.us-east-1.emqxsl.com:8084/mqtt",
+  // Use uma credencial exclusiva e limitada para o painel antes de preencher estes campos.
+  username: "",
+  password: "",
   baseTopic: "horta-militar/001",
 };
 
 const state = {
   client: null,
   connected: false,
-  demoMode: MQTT_CONFIG.url.includes("SEU_"),
+  controllerOnline: false,
+  demoMode: !MQTT_CONFIG.url || !MQTT_CONFIG.username || !MQTT_CONFIG.password,
   readings: {
     soil1: 62,
     soil2: 41,
@@ -66,10 +68,33 @@ function addEvent(message) {
   }
 }
 
-function setConnectionStatus(connected, label) {
+function renderConnectionStatus() {
+  if (state.demoMode) {
+    elements.connectionStatus.textContent = "modo demo";
+    elements.connectionStatus.classList.remove("connected");
+    return;
+  }
+
+  if (state.connected && state.controllerOnline) {
+    elements.connectionStatus.textContent = "ESP32 online";
+    elements.connectionStatus.classList.add("connected");
+    return;
+  }
+
+  elements.connectionStatus.textContent = state.connected ? "aguardando ESP32" : "offline";
+  elements.connectionStatus.classList.remove("connected");
+}
+
+function setBrokerConnection(connected) {
   state.connected = connected;
-  elements.connectionStatus.textContent = label || (connected ? "online" : "offline");
-  elements.connectionStatus.classList.toggle("connected", connected);
+  renderConnectionStatus();
+}
+
+function numberInRange(value, min, max) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue >= min && numericValue <= max
+    ? numericValue
+    : null;
 }
 
 function classifySoil(value) {
@@ -136,34 +161,46 @@ function handleMessage(receivedTopic, payloadBuffer) {
   const payload = payloadBuffer.toString();
   const base = MQTT_CONFIG.baseTopic;
   const path = receivedTopic.replace(`${base}/`, "");
-  const numericValue = Number(payload);
+  const numericValue = numberInRange(payload, 0, 100);
+  let shouldAddHistory = false;
 
   if (path === "sensores/umidade_solo" || path === "sensores/umidade_solo_1") {
-    state.readings.soil1 = numericValue;
+    if (numericValue !== null) state.readings.soil1 = numericValue;
   }
 
   if (path === "sensores/umidade_solo_2") {
-    state.readings.soil2 = numericValue;
+    if (numericValue !== null) state.readings.soil2 = numericValue;
   }
 
   if (path === "sensores/umidade_solo_3") {
-    state.readings.soil3 = numericValue;
+    if (numericValue !== null) {
+      state.readings.soil3 = numericValue;
+      // O ESP32 publica os tres canteiros em sequencia; registra apos o ultimo.
+      shouldAddHistory = true;
+    }
   }
 
   if (path === "sensores/temperatura") {
-    state.readings.temperature = numericValue;
+    const temperature = numberInRange(payload, -20, 80);
+    if (temperature !== null) state.readings.temperature = temperature;
   }
 
   if (path === "sensores/umidade_ar") {
-    state.readings.airHumidity = numericValue;
+    if (numericValue !== null) state.readings.airHumidity = numericValue;
   }
 
   if (path === "sensores/luminosidade") {
-    state.readings.lightLevel = numericValue;
+    if (numericValue !== null) state.readings.lightLevel = numericValue;
   }
 
   if (path === "sensores/chuva") {
-    state.readings.rainStatus = payload === "1" || payload === "chuva" ? "Chuva detectada" : "Sem chuva";
+    if (numericValue !== null) {
+      state.readings.rainStatus = numericValue >= 10 ? `Chuva (${Math.round(numericValue)}%)` : "Sem chuva";
+    } else {
+      state.readings.rainStatus = payload === "1" || payload.toLowerCase() === "chuva"
+        ? "Chuva detectada"
+        : "Sem chuva";
+    }
   }
 
   if (path === "status/bomba") {
@@ -174,15 +211,22 @@ function handleMessage(receivedTopic, payloadBuffer) {
     state.readings.modeStatus = payload === "automatico" ? "Automatico" : "Manual";
   }
 
+  if (path === "status/conexao") {
+    state.controllerOnline = payload.toLowerCase() === "online";
+    renderConnectionStatus();
+  }
+
   updateReadings();
-  addHistoryPoint();
-  drawHistoryChart();
+  if (shouldAddHistory) {
+    addHistoryPoint();
+    drawHistoryChart();
+  }
   addEvent(`Recebido ${path}: ${payload}`);
 }
 
 function connectMqtt() {
   if (state.demoMode || !window.mqtt) {
-    setConnectionStatus(false, "modo demo");
+    renderConnectionStatus();
     addEvent("Painel iniciado em modo demonstracao.");
     return;
   }
@@ -200,13 +244,13 @@ function connectMqtt() {
   });
 
   state.client.on("connect", () => {
-    setConnectionStatus(true);
+    setBrokerConnection(true);
     addEvent("Painel conectado ao MQTT.");
     state.client.subscribe(`${MQTT_CONFIG.baseTopic}/#`, { qos: 1 });
   });
 
   state.client.on("reconnect", () => addEvent("Tentando reconectar..."));
-  state.client.on("close", () => setConnectionStatus(false));
+  state.client.on("close", () => setBrokerConnection(false));
   state.client.on("error", (error) => addEvent(`Erro MQTT: ${error.message}`));
   state.client.on("message", handleMessage);
 }
